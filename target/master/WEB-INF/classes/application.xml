@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:mvc="http://www.alibaba.com/schema/stat"
+       xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+           http://www.springframework.org/schema/aop
+           http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+           http://www.springframework.org/schema/tx
+           http://www.springframework.org/schema/tx/spring-tx.xsd
+     	 	http://www.springframework.org/schema/context
+      		http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.alibaba.com/schema/stat
+           http://www.alibaba.com/schema/stat.xsd
+            http://code.alibabatech.com/schema/dubbo
+        http://code.alibabatech.com/schema/dubbo/dubbo.xsd">
+
+
+    <!-- 自动扫描了所有的XxxxMapper.xml对应的mapper接口文件，这样就不用一个一个手动配置Mpper的映射了，
+    只要Mapper接口类和Mapper映射文件对应起来就可以了。 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.zheng.dao"/>
+    </bean>
+
+    <!-- 引入jdbc配置文件 -->
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:properties/*.properties</value>
+                <!--要是有多个配置文件，只需在这里继续添加即可 -->
+            </list>
+        </property>
+    </bean>
+
+    <!-- jdbc配置数据源 -->
+    <!--	<bean id="dataSource"
+            class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+            <property name="driverClassName">
+                <value>${jdbc_driverClassName}</value>
+            </property>
+            <property name="url">
+                <value>${jdbc_url}</value>
+            </property>
+            <property name="username">
+                <value>${jdbc_username}</value>
+            </property>
+            <property name="password">
+                <value>${jdbc_password}</value>
+            </property>
+        </bean>-->
+
+    <!-- dataSource配置 -->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource"
+          init-method="init" destroy-method="close">
+        <property name="driverClassName" value="${jdbc_driverClassName}"/>
+        <property name="url" value="${jdbc_url}"/>
+        <property name="username" value="${jdbc_username}"/>
+        <property name="password" value="${jdbc_password}"/>
+
+        <!--	<property name="filters" value="log4j"/>-->
+        <property name="maxActive" value="5"/>
+        <property name="initialSize" value="1"/>
+        <property name="maxWait" value="6000"/>
+    </bean>
+
+
+    <!-- 配置Mybatis的文件 ，mapperLocations配置**Mapper.xml文件位置，configLocation配置mybatis-config文件位置-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="mapperLocations" value="classpath:mapper/*.xml"/>
+        <property name="configLocation" value="classpath:mybatis/mybatis-config.xml"/>
+        <!-- 类型映射地址-->
+        <!-- <property name="typeAliasesPackage" value="com.tiantian.ckeditor.model"
+            /> -->
+    </bean>
+
+    <!--  配置事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!-- 注解的方式添加事务：手动在需要添加事务的方法上面添加 @Transactional注解 -->
+    <!--<tx:annotation-driven transaction-manager="transactionManager"/>-->
+
+    <!-- 申明式事务指定不同的事务性设置 -->
+    <!--
+    隔离级别4种
+    read uncommited：是最低的事务隔离级别，它允许另外一个事务可以看到这个事务未提交的数据。
+    read commited：保证一个事物提交后才能被另外一个事务读取。另外一个事务不能读取该事物未提交的数据。
+    repeatable read：这种事务隔离级别可以防止脏读，不可重复读。但是可能会出现幻象读。它除了保证一个事务不能被另外一个事务读取未提交的数据之外还避免了以下情况产生（不可重复读）。
+    serializable：这是花费最高代价但最可靠的事务隔离级别。事务被处理为顺序执行。除了防止脏读，不可重复读之外，还避免了幻象读。
+    -->
+    <!-- 事务支持类型7种
+    propagation_requierd：如果当前没有事务，就新建一个事务，如果已存在一个事务中，加入到这个事务中，这是最常见的选择。
+    propagation_supports：支持当前事务，如果没有当前事务，就以非事务方法执行。
+    propagation_mandatory：使用当前事务，如果没有当前事务，就抛出异常。
+    propagation_required_new：新建事务，如果当前存在事务，把当前事务挂起。
+    propagation_not_supported：以非事务方式执行操作，如果当前存在事务，就把当前事务挂起。
+    propagation_never：以非事务方式执行操作，如果当前事务存在则抛出异常。
+    propagation_nested：如果当前存在事务，则在嵌套事务内执行。如果当前没有事务，则执行与propagation_required类似的操作
+     -->
+
+
+    <!-- rollback-for 指定出什么样的异常才回滚事务，不匹配就不回滚事务 -->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="add*" isolation="DEFAULT" propagation="REQUIRED" rollback-for="java.lang.Exception"/>
+            <tx:method name="update*" isolation="DEFAULT" propagation="REQUIRED" rollback-for="java.lang.Exception"/>
+            <tx:method name="delete*" isolation="DEFAULT" propagation="REQUIRED" rollback-for="java.lang.Exception"/>
+            <tx:method name="get*" read-only="true" isolation="DEFAULT" propagation="REQUIRED"
+                       rollback-for="java.lang.Exception"/>
+        </tx:attributes>
+    </tx:advice>
+
+
+    <!-- 配置的方式开启：aop面向切面来处理,配置参与事务的类 -->
+    <!--
+    proxy-target-class属性值决定是基于接口的还是基于类的代理被创建。如果proxy-target-class 属性值被设置为true，
+    那么基于类的代理将起作用（这时需要cglib库）。
+    如果proxy-target-class属值被设置为false或者这个属性被省略，那么标准的JDK 基于接口的代理将起作用。
+    -->
+    <!-- expose-proxy="true" 表示将当前代理对象暴露出去，不然 ((UserService)AopContext.currentProxy()) 或得的是 null . -->
+    <!--<aop:config proxy-target-class="true" expose-proxy="false">-->
+    <!--<aop:config>-->
+    <!--配置切入点（类下面的的方法） -->
+    <!--	<aop:pointcut id="pc" expression="execution(* com.zheng.service.*.*(..))"/>-->
+    <!-- 配置通知类 （前置通知 后置通知 返回通知 环绕通知 抛出异常后通知）-->
+    <!--<aop:advisor  pointcut-ref="pc" advice-ref="advice" order="0"/>-->
+
+    <!-- 切面（切面通常是指一个类） -->
+    <!--<aop:aspect id="logAspect" ref="logAopDemo">-->
+    <!-- 配置一个切点 -->
+    <!--<aop:pointcut id="logAopPoint" expression="execution(* com.zheng.controller..*(..))" />-->
+    <!-- 配置前置通知 -->
+    <!--<aop:before pointcut-ref="logAopPoint" method="methodBefore" />-->
+    <!-- 配置前置通知 -->
+    <!--<aop:after pointcut-ref="logAopPoint" method="methodAfter" />-->
+    <!-- 配置后置返回通知 -->
+    <!--	<aop:after-returning pointcut-ref="logAopPoint" method="methodReturning"/>-->
+    <!-- 异常通知 -->
+    <!--<aop:after-throwing pointcut-ref="logAopPoint" method="methodThrowing"> /-->
+    <!--</aop:aspect>-->
+
+    <!--</aop:config>-->
+
+    <!-- 配置的方式开启事务：-->
+    <aop:config>
+        <aop:pointcut id="txPointcut" expression="execution(* com.zheng.service.*.*(..))"/>
+        <aop:advisor pointcut-ref="txPointcut" advice-ref="txAdvice"/>
+    </aop:config>
+
+    <!-- 开启事务控制的注解支持 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+    <!--
+        @Transactional 注解包含的参数
+        value	String	可选的限定描述符，指定使用的事务管理器
+        propagation	enum: Propagation	可选的事务传播行为设置
+        isolation	enum: Isolation	可选的事务隔离级别设置
+        readOnly	boolean	读写或只读事务，默认读写
+        timeout	int (in seconds granularity)	事务超时时间设置
+        rollbackFor	Class对象数组，必须继承自Throwable	导致事务回滚的异常类数组
+        rollbackForClassName	类名数组，必须继承自Throwable	导致事务回滚的异常类名字数组
+        noRollbackFor	Class对象数组，必须继承自Throwable	不会导致事务回滚的异常类数组
+        noRollbackForClassName	类名数组，必须继承自Throwable	不会导致事务回滚的异常类名字数组
+
+        @Transactional 可以作用于接口、接口方法、类以及类方法上。当作用于类上时，该类的所有 public 方法将都具有该类型的事务属性，
+        同时，我们也可以在方法级别使用该标注来覆盖类级别的定义。
+
+         虽然 @Transactional 注解可以作用于接口、接口方法、类以及类方法上，但是 Spring 建议不要在接口或者接口方法上使用该注解，
+         因为这只有在使用基于接口的代理时它才会生效。另外， @Transactional 注解应该只被应用到 public 方法上，
+         这是由 Spring AOP 的本质决定的。如果你在 protected、private 或者默认可见性的方法上使用 @Transactional 注解，
+         这将被忽略，也不会抛出任何异常。
+
+        重点****》》》默认情况下，只有来自外部的方法调用才会被AOP代理捕获，也就是，类内部方法调用本类内部的其他方法并不会引起事务行为，
+        即使被调用方法使用@Transactional注解进行修饰。-->
+
+
+
+</beans>

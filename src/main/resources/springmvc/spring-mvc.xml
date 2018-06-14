@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+
+
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-3.2.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd
+       http://www.springframework.org/schema/aop
+       http://www.springframework.org/schema/aop/spring-aop-3.0.xsd ">
+
+
+    <!-- 扫描controller（controller层注入） -->
+    <context:component-scan base-package="com.zheng.controller,
+    com.zheng.service,com.zheng.dao,com.zheng.log,com.zheng.initialization"/>
+
+
+    <!-- 注解驱动开启 -->
+    <!--<mvc:annotation-driven/>-->
+
+    <!-- 它会像一个检查员，对进入DispatcherServlet的URL进行筛查，如果发现是静态资源的请求，
+    就将该请求转由Web应用服务器默认的Servlet处理，如果不是静态资源的请求，才由DispatcherServlet继续处理。-->
+    <!--<mvc:default-servlet-handler />-->
+
+    <!-- 对静态资源的映射管理 -->
+    <!--   <mvc:resources mapping="/js/**" location="/js/"/>
+         <mvc:resources mapping="/images/**" location="/images/"/>-->
+
+    <!-- 对模型视图添加前后缀 -->
+    <bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="viewClass" value="org.springframework.web.servlet.view.JstlView"></property>
+        <property name="prefix" value="/WEB-INF/view/"></property>
+        <property name="suffix" value=".jsp"></property>
+        <property name="order" value="0"></property>
+    </bean>
+
+
+    <!--     <mvc:interceptors>
+              <mvc:interceptor>
+                   <mvc:mapping path="/**/*"/>
+                   <mvc:exclude-mapping path="/WEB-INF/js" />
+                   &lt;!&ndash; 自定义拦截处理 &ndash;&gt;
+                   <bean class="com.luwei.console.mg.interceptor.VisitInterceptor"></bean>
+              </mvc:interceptor>
+         </mvc:interceptors>-->
+
+
+    <!-- 注解的方式开启aop日志记录-->
+    <aop:aspectj-autoproxy proxy-target-class="true"/>
+
+    <!-- 配置的方式开启aop日志切入面的bean -->
+    <bean id="logAopDemo" class="com.zheng.log.LogAop"/>
+    <!-- 配置的方式开启aop日志记录 -->
+    <aop:config>
+        <aop:aspect id="logAspect" ref="logAopDemo">
+            <aop:pointcut id="pointUserMgr" expression="execution(* com.zheng.controller..*(..))"/>
+            <aop:before method="methodBefore" pointcut-ref="pointUserMgr"/>
+            <aop:after pointcut-ref="pointUserMgr" method="methodAfter"/>
+            <aop:after-returning pointcut-ref="pointUserMgr" method="methodReturning"/>
+            <aop:after-throwing pointcut-ref="pointUserMgr" method="methodThrowing"/>
+        </aop:aspect>
+    </aop:config>
+
+    <!-- 异步线程池 -->
+    <bean id="taskExecutor"
+          class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <!-- 线程池的处理次序是先找核心线程，队列，最大线程数，最后策略-->
+        <!-- 核心线程数 -->
+        <property name="corePoolSize" value="10"/>
+        <!-- 队列最大长度 >=mainExecutor.maxSize -->
+        <property name="queueCapacity" value="1000"/>
+        <!-- 最大线程数 -->
+        <property name="maxPoolSize" value="100"/>
+        <!-- 线程池维护线程所允许的空闲时间 -->
+        <property name="keepAliveSeconds" value="300"/>
+        <!-- 线程池对拒绝任务(无线程可用)的处理策略 -->
+        <property name="rejectedExecutionHandler">
+            <bean class="java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy"/>
+        </property>
+    </bean>
+
+
+</beans>

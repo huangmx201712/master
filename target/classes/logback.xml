@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--ALL,TRACE, DEBUG, INFO, WARN, ERROR ,FATAL,OFF（由低到高）-->
+<!--<Configuration status="OFF" monitorInterval="-1">-->
+<Configuration>
+    <!-- ch.qos.logback.core.ConsoleAppender 控制台输出 -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+            </Pattern>
+        </layout>
+    </appender>
+
+    <!-- ch.qos.logback.core.rolling.RollingFileAppender 文件日志输出 -->
+    <appender name="mavenProjectLogs"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>E:/myProject/mavenProject.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>E:/myProject/mavenProject.log.%d{yyyy-MM-dd}
+            </fileNamePattern>
+            <maxHistory>5</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="springLogs"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>E:/myProject/mavenProject-spring.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>E:/myProject/mavenProject-spring.log.%d{yyyy-MM-dd}
+            </fileNamePattern>
+            <maxHistory>5</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!--logger用于精确设置每个包下面的日志  -->
+    <!--
+    additivity的作用在于 children-logger是否使用 rootLogger配置的appender进行输出。
+    false：表示只用当前logger的appender-ref。
+    true：表示当前logger的appender-ref和rootLogger的appender-ref都有效。
+    -->
+   <logger name="com.zheng.controller" level="DEBUG" addtivity="false" >
+       <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="com.zheng.kafka" level="DEBUG" addtivity="false" >
+        <appender-ref ref="STDOUT" />
+    </logger>
+    <logger name="com.zheng.initialization" level="DEBUG" addtivity="false" >
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="org.springframework" level="ERROR">
+        <appender-ref ref="springLogs" />
+    </logger>
+    <logger name="org.springframework.web" level="ERROR">
+        <appender-ref ref="springLogs" />
+    </logger>
+
+    <!-- Hibernate显示sql参数值 -->
+ <!--   <logger name="org.hibernate.type.descriptor.sql.BasicBinder"  level="TRACE" />
+    <logger name="org.hibernate.type.descriptor.sql.BasicExtractor"  level="DEBUG" />-->
+    <!-- <logger name="org.hibernate.SQL" level="DEBUG" />
+    <logger name="org.hibernate.type" level="TRACE" />
+    <logger name="org.hibernate.engine.QueryParameters" level="DEBUG" />
+    <logger name="org.hibernate.engine.query.HQLQueryPlan" level="DEBUG" /> -->
+
+    <!-- Mybatis显示sql参数值 -->
+    <logger name="com.zheng.dao" level="DEBUG" addtivity="false" >
+        <appender-ref ref="STDOUT"/>
+    </logger>
+    <!-- logj4 2 aop拦截日志处理-->
+    <logger name="com.zheng.log" level="DEBUG" addtivity="false" >
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+
+    <!-- 定义了ERROR和INFO级别的日志，分别在STDOUT/mavenProjectlogs输出 -->
+    <root level="WARN" >
+        <appender-ref ref="springLogs" />
+    </root>
+</Configuration>
